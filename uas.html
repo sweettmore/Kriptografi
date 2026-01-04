@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Kriptografi AES-128</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="w-full h-full overflow-auto"></div>
+  <script>
+    const defaultConfig = {
+      background_color: "#0f172a",
+      surface_color: "#1e293b",
+      text_color: "#f1f5f9",
+      primary_action_color: "#3b82f6",
+      secondary_action_color: "#64748b",
+      font_family: "Inter",
+      font_size: 16,
+      app_title: "Aplikasi Kriptografi AES-128",
+      encrypt_button_text: "Enkripsi",
+      decrypt_button_text: "Dekripsi",
+      clear_button_text: "Bersihkan"
+    };
+
+    let config = { ...defaultConfig };
+
+    function renderApp() {
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = 'system-ui, -apple-system, sans-serif';
+      const fontFamily = `${customFont}, ${baseFontStack}`;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+      const appTitle = config.app_title || defaultConfig.app_title;
+      const encryptText = config.encrypt_button_text || defaultConfig.encrypt_button_text;
+      const decryptText = config.decrypt_button_text || defaultConfig.decrypt_button_text;
+      const clearText = config.clear_button_text || defaultConfig.clear_button_text;
+
+      document.getElementById('app').innerHTML = `
+        <div class="app-wrapper w-full min-h-full" style="background: ${backgroundColor}; font-family: ${fontFamily}; padding: 32px;">
+          <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+              <h1 id="title" style="font-size: ${baseSize * 2}px; color: ${textColor}; font-weight: 700; margin-bottom: 8px;">${appTitle}</h1>
+              <p id="subtitle" style="font-size: ${baseSize * 0.9}px; color: ${textColor}; opacity: 0.7;">Enkripsi dan dekripsi teks menggunakan Advanced Encryption Standard 128-bit</p>
+            </div>
+
+            <!-- Main Container -->
+            <div style="background: ${surfaceColor}; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+              
+              <!-- Key Input -->
+              <div style="margin-bottom: 24px;">
+                <label for="keyInput" id="keyLabel" style="display: block; font-size: ${baseSize * 0.9}px; color: ${textColor}; margin-bottom: 8px; font-weight: 600;">Kunci Enkripsi (16 karakter untuk AES-128)</label>
+                <input 
+                  type="text" 
+                  id="keyInput" 
+                  maxlength="16"
+                  placeholder="Masukkan kunci 16 karakter"
+                  style="width: 100%; padding: 12px 16px; font-size: ${baseSize}px; background: ${backgroundColor}; color: ${textColor}; border: 2px solid ${secondaryColor}; border-radius: 8px; outline: none; font-family: 'Courier New', monospace;"
+                >
+                <p id="keyCounter" style="font-size: ${baseSize * 0.8}px; color: ${textColor}; opacity: 0.6; margin-top: 4px;">0/16 karakter</p>
+              </div>
+
+              <!-- Input Text -->
+              <div style="margin-bottom: 24px;">
+                <label for="inputText" id="inputLabel" style="display: block; font-size: ${baseSize * 0.9}px; color: ${textColor}; margin-bottom: 8px; font-weight: 600;">Teks Input</label>
+                <textarea 
+                  id="inputText" 
+                  rows="5"
+                  placeholder="Masukkan teks yang ingin dienkripsi atau didekripsi..."
+                  style="width: 100%; padding: 12px 16px; font-size: ${baseSize}px; background: ${backgroundColor}; color: ${textColor}; border: 2px solid ${secondaryColor}; border-radius: 8px; outline: none; resize: vertical; font-family: ${fontFamily};"
+                ></textarea>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+                <button 
+                  id="encryptBtn"
+                  style="flex: 1; min-width: 150px; padding: 14px 24px; font-size: ${baseSize}px; background: ${primaryColor}; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                >${encryptText}</button>
+                <button 
+                  id="decryptBtn"
+                  style="flex: 1; min-width: 150px; padding: 14px 24px; font-size: ${baseSize}px; background: ${secondaryColor}; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                >${decryptText}</button>
+                <button 
+                  id="clearBtn"
+                  style="padding: 14px 24px; font-size: ${baseSize}px; background: transparent; color: ${textColor}; border: 2px solid ${secondaryColor}; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                >${clearText}</button>
+              </div>
+
+              <!-- Output Text -->
+              <div style="margin-bottom: 16px;">
+                <label for="outputText" id="outputLabel" style="display: block; font-size: ${baseSize * 0.9}px; color: ${textColor}; margin-bottom: 8px; font-weight: 600;">Hasil Output</label>
+                <textarea 
+                  id="outputText" 
+                  rows="5"
+                  readonly
+                  placeholder="Hasil enkripsi/dekripsi akan muncul di sini..."
+                  style="width: 100%; padding: 12px 16px; font-size: ${baseSize}px; background: ${backgroundColor}; color: ${textColor}; border: 2px solid ${secondaryColor}; border-radius: 8px; outline: none; resize: vertical; font-family: 'Courier New', monospace;"
+                ></textarea>
+              </div>
+
+              <!-- Copy Button -->
+              <button 
+                id="copyBtn"
+                style="width: 100%; padding: 12px 24px; font-size: ${baseSize * 0.9}px; background: transparent; color: ${textColor}; border: 2px solid ${secondaryColor}; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+              >📋 Salin Hasil</button>
+
+              <!-- Status Message -->
+              <div id="statusMsg" style="margin-top: 16px; padding: 12px; border-radius: 8px; font-size: ${baseSize * 0.9}px; text-align: center; display: none;"></div>
+            </div>
+
+            <!-- Info Section -->
+            <div style="margin-top: 32px; padding: 24px; background: ${surfaceColor}; border-radius: 12px;">
+              <h2 id="infoTitle" style="font-size: ${baseSize * 1.3}px; color: ${textColor}; font-weight: 700; margin-bottom: 12px;">ℹ️ Informasi AES-128</h2>
+              <ul id="infoList" style="font-size: ${baseSize * 0.9}px; color: ${textColor}; opacity: 0.8; line-height: 1.8; list-style: disc; padding-left: 24px;">
+                <li>AES (Advanced Encryption Standard) adalah algoritma enkripsi simetris yang sangat aman</li>
+                <li>AES-128 menggunakan kunci sepanjang 128 bit (16 karakter)</li>
+                <li>Algoritma ini digunakan secara luas untuk mengamankan data sensitif</li>
+                <li>Untuk dekripsi, gunakan kunci yang sama dengan saat enkripsi</li>
+                <li>Hasil enkripsi akan berupa teks yang tidak dapat dibaca tanpa kunci yang benar</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      `;
+
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      const keyInput = document.getElementById('keyInput');
+      const inputText = document.getElementById('inputText');
+      const outputText = document.getElementById('outputText');
+      const encryptBtn = document.getElementById('encryptBtn');
+      const decryptBtn = document.getElementById('decryptBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const keyCounter = document.getElementById('keyCounter');
+
+      // Key input counter
+      keyInput.addEventListener('input', () => {
+        const length = keyInput.value.length;
+        keyCounter.textContent = `${length}/16 karakter`;
+        keyCounter.style.color = length === 16 ? '#10b981' : config.text_color || defaultConfig.text_color;
+      });
+
+      // Encrypt button
+      encryptBtn.addEventListener('click', () => {
+        const key = keyInput.value;
+        const text = inputText.value;
+
+        if (key.length !== 16) {
+          showStatus('Kunci harus tepat 16 karakter untuk AES-128!', 'error');
+          return;
+        }
+
+        if (!text) {
+          showStatus('Masukkan teks yang ingin dienkripsi!', 'error');
+          return;
+        }
+
+        try {
+          const encrypted = CryptoJS.AES.encrypt(text, key).toString();
+          outputText.value = encrypted;
+          showStatus('✅ Enkripsi berhasil!', 'success');
+        } catch (error) {
+          showStatus('❌ Terjadi kesalahan saat enkripsi!', 'error');
+        }
+      });
+
+      // Decrypt button
+      decryptBtn.addEventListener('click', () => {
+        const key = keyInput.value;
+        const text = inputText.value;
+
+        if (key.length !== 16) {
+          showStatus('Kunci harus tepat 16 karakter untuk AES-128!', 'error');
+          return;
+        }
+
+        if (!text) {
+          showStatus('Masukkan teks yang ingin didekripsi!', 'error');
+          return;
+        }
+
+        try {
+          const decrypted = CryptoJS.AES.decrypt(text, key);
+          const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+          
+          if (!decryptedText) {
+            showStatus('❌ Dekripsi gagal! Pastikan kunci dan teks enkripsi benar.', 'error');
+            return;
+          }
+          
+          outputText.value = decryptedText;
+          showStatus('✅ Dekripsi berhasil!', 'success');
+        } catch (error) {
+          showStatus('❌ Terjadi kesalahan saat dekripsi!', 'error');
+        }
+      });
+
+      // Clear button
+      clearBtn.addEventListener('click', () => {
+        keyInput.value = '';
+        inputText.value = '';
+        outputText.value = '';
+        keyCounter.textContent = '0/16 karakter';
+        keyCounter.style.color = config.text_color || defaultConfig.text_color;
+        showStatus('🗑️ Semua field telah dibersihkan', 'info');
+      });
+
+      // Copy button
+      copyBtn.addEventListener('click', () => {
+        if (!outputText.value) {
+          showStatus('Tidak ada hasil untuk disalin!', 'error');
+          return;
+        }
+
+        outputText.select();
+        document.execCommand('copy');
+        showStatus('📋 Hasil telah disalin ke clipboard!', 'success');
+      });
+
+      // Hover effects
+      const buttons = [encryptBtn, decryptBtn, clearBtn, copyBtn];
+      buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+          btn.style.transform = 'translateY(-2px)';
+          btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = 'translateY(0)';
+          btn.style.boxShadow = 'none';
+        });
+      });
+    }
+
+    function showStatus(message, type) {
+      const statusMsg = document.getElementById('statusMsg');
+      const colors = {
+        success: '#10b981',
+        error: '#ef4444',
+        info: '#3b82f6'
+      };
+
+      statusMsg.textContent = message;
+      statusMsg.style.background = colors[type] || colors.info;
+      statusMsg.style.color = 'white';
+      statusMsg.style.display = 'block';
+
+      setTimeout(() => {
+        statusMsg.style.display = 'none';
+      }, 3000);
+    }
+
+    async function onConfigChange(newConfig) {
+      config = { ...config, ...newConfig };
+      renderApp();
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => config.primary_action_color || defaultConfig.primary_action_color,
+            set: (value) => {
+              config.primary_action_color = value;
+              window.elementSdk.setConfig({ primary_action_color: value });
+            }
+          },
+          {
+            get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+            set: (value) => {
+              config.secondary_action_color = value;
+              window.elementSdk.setConfig({ secondary_action_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (value) => {
+            config.font_family = value;
+            window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (value) => {
+            config.font_size = value;
+            window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["app_title", config.app_title || defaultConfig.app_title],
+        ["encrypt_button_text", config.encrypt_button_text || defaultConfig.encrypt_button_text],
+        ["decrypt_button_text", config.decrypt_button_text || defaultConfig.decrypt_button_text],
+        ["clear_button_text", config.clear_button_text || defaultConfig.clear_button_text]
+      ]);
+    }
+
+    // Initialize
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+
+    renderApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b88a2e031c49d00',t:'MTc2NzUwNzY5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
